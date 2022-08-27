@@ -1,0 +1,54 @@
+#!/bin/bash
+
+set -e
+
+VERSION=v8.4.0
+
+help() {
+  echo "Usage:"
+  echo "  zmicro package install fd <args...>"
+  echo ""
+}
+
+install() {
+  local arch="x86_64"
+  local typ="unknown"
+  local os="linux-gnu"
+  local bin_path=/usr/bin
+
+  if [ "$(os::arch)" = "arm64" ]; then
+    arch="aarch64"
+  fi
+
+  if [ "$(os::is_macos)" = "true" ]; then
+    arch="x86_64" # mac no aarch64 found
+    typ="apple"
+    os="darwin"
+    bin_path=/usr/local/bin
+  fi
+
+  local tmp_file=/tmp/fd.tar.gz
+  local url="https://github.com/sharkdp/fd/releases/download/${VERSION}/fd-${VERSION}-${arch}-${typ}-${os}.tar.gz"
+  curl -fSL $url -o $tmp_file
+  cd /tmp
+  tar -zxvf $tmp_file >>/dev/null 2>&1
+  sudo mv fd-${VERSION}-${arch}-${typ}-${os}/fd $bin_path
+  rm -rf $tmp_file
+  rm -rf fd-${VERSION}-${arch}-${typ}-${os}
+}
+
+core() {
+  if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    help
+    exit 0
+  fi
+
+  install
+  log::success "install fd success."
+}
+
+run() {
+  core $@
+}
+
+run $@
